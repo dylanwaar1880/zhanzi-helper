@@ -5,18 +5,10 @@ import 'screens/home_screen_v2.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 捕获所有Flutter错误
+  // 捕获Flutter框架错误
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     debugPrint('Flutter Error: ${details.exception}');
-    debugPrint('Stack trace: ${details.stack}');
-  };
-  
-  // 捕获Dart异步错误
-  PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('Platform Error: $error');
-    debugPrint('Stack trace: $stack');
-    return true;
   };
   
   SystemChrome.setSystemUIOverlayStyle(
