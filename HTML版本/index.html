@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>地藏占察轮辅助计算</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"PingFang SC",sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;background:#f0f0f0}
+.container{width:100%;height:100%;padding:10px;display:flex;flex-direction:column}
+.header-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.btn-icon{width:36px;height:36px;border:none;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.title{text-align:center;font-size:18px;padding:8px 0;line-height:1.4}
+.btn-bar{display:flex;gap:8px;margin-bottom:10px}
+.btn-bar button{flex:1;padding:10px;border:none;border-radius:8px;background:#fff;cursor:pointer;transition:background 0.15s,transform 0.1s}
+.btn-bar button:active{background:#d0d0d0;transform:scale(0.98)}
+
+.input{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  margin-bottom:12px;
+  font-size:14px;
+  line-height:1.4;
+  min-height:60px;
+  max-height:120px;
+  text-align:left;
+  white-space:pre-wrap;
+  word-wrap:break-word;
+  overflow:hidden;
+  resize:none;
+}
+
+.grid-wrap{flex:1;display:flex;flex-direction:column;gap:14px}
+.group{display:flex;flex-direction:column;gap:6px}
+.row{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.btn{aspect-ratio:1/1;border:none;border-radius:8px;background:#87CEEB;color:#fff;font-size:22px;cursor:pointer}
+.btn.selected{background:#4682B4}
+
+.toast{
+  position:fixed;left:50%;bottom:60px;transform:translateX(-50%);
+  background:rgba(0,0,0,0.7);color:#fff;padding:8px 16px;border-radius:20px;
+  opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap
+}
+.toast.show{opacity:1}
+
+/* 全屏历史页面 */
+.history-page{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:#f0f0f0;z-index:1000;display:none;flex-direction:column
+}
+.history-page.show{display:flex}
+.history-header{
+  display:flex;align-items:center;padding:12px;
+  background:#fff;border-bottom:1px solid #eee;flex-shrink:0
+}
+.back-btn{
+  border:none;background:none;font-size:20px;cursor:pointer;
+  padding:4px 8px 4px 0;
+}
+.history-header h2{flex:1;text-align:center;font-size:16px;margin:0}
+.history-content{
+  flex:1;overflow-y:auto;padding:12px
+}
+.record-card{
+  background:#fff;border-radius:8px;margin-bottom:12px;overflow:hidden
+}
+.record-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px;border-bottom:1px solid #eee
+}
+.card-info{flex:1;min-width:0}
+.record-question{font-size:14px;font-weight:500;margin-bottom:2px;word-break:break-all;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.record-type{font-size:12px;color:#4682B4}
+.expand-btn{
+  padding:6px 12px;background:#f0f0f0;border:none;border-radius:4px;
+  font-size:13px;color:#666;cursor:pointer;flex-shrink:0;margin-left:8px
+}
+.expand-btn:hover{background:#e0e0e0}
+.last-round,.all-rounds{padding:12px}
+/* 历史记录两行布局 */
+.all-rounds .round-item{
+  padding:6px 12px;border-bottom:1px solid #eee
+}
+.all-rounds .round-item:last-child{border-bottom:none}
+.round-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.round-left{flex:1;display:flex;align-items:center;min-width:0}
+.round-result{
+  font-size:13px;color:#4682B4;font-weight:500;
+  flex-shrink:0;margin-right:8px;white-space:nowrap
+}
+.round-lunxiang{
+  font-size:13px;color:#333;
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.round-right{display:flex;gap:6px;flex-shrink:0;margin-left:8px}
+.round-row2{font-size:11px;color:#999;display:flex;align-items:center;justify-content:space-between}
+.round-beizhu-text{font-size:12px;color:#666;flex:1;margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 搜索栏 */
+.search-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #4682B4;
+}
+
+.filter-btn {
+  padding: 10px 16px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.filter-btn.active {
+  background: #4682B4;
+  color: #fff;
+}
+
+/* 高亮样式 */
+.highlight {
+  background: #FFEB3B;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* 轮相选项样式 */
+.lunxiang-option.selected {
+  background: #e3f2fd;
+  color: #4682B4;
+  font-weight: 500;
+}
+
+/* 按钮样式 */
+.round-btn{padding:4px 8px;font-size:12px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer}
+.round-btn.yanyan-true{background:#4CAF50;color:#fff;border-color:#4CAF50}
+.round-btn.yanyan-false{background:#f44336;color:#fff;border-color:#f44336}
+.round-btn.yanyan-pending{background:#FF9800;color:#fff;border-color:#FF9800}
+.round-btn.has-beizhu{background:#2196F3;color:#fff;border-color:#2196F3}
+
+/* 自定义弹窗 */
+.custom-modal{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.5);z-index:2000;display:none;align-items:center;justify-content:center
+}
+.custom-modal.show{display:flex}
+.custom-modal-content{
+  background:#fff;border-radius:8px;width:280px;max-width:90%;
+  max-height:80%;overflow:hidden;display:flex;flex-direction:column
+}
+.custom-modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:1px solid #eee;flex-shrink:0
+}
+.custom-modal-header h3{margin:0;font-size:16px}
+.custom-modal-close{border:none;background:none;font-size:20px;cursor:pointer;padding:0}
+.custom-modal-body{flex:1;overflow-y:auto}
+.record-empty{text-align:center;color:#888;padding:40px 0}
+.clear-btn{
+  border:none;background:#FF6B6B;color:#fff;
+  padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer
+}
+.header-btn{
+  border:none;background:#4682B4;color:#fff;
+  padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer
+}
+
+/* 复制菜单 */
+.copy-menu{
+  position:fixed;
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.15);
+  z-index:2000;
+  display:none;
+  min-width:140px;
+  overflow:hidden
+}
+.copy-menu.show{display:block}
+.copy-menu-item{
+  padding:12px 16px;
+  font-size:14px;
+  color:#333;
+  cursor:pointer;
+  border-bottom:1px solid #f0f0f0
+}
+.copy-menu-item:last-child{border-bottom:none}
+.copy-menu-item:active{background:#f5f5f5}
+.copy-menu-item.cancel{color:#999}
+.copy-menu-item.delete{color:#f44336}
+.copy-menu-item.delete:active{background:#ffebee}
+
+.export-option{
+  display:flex;align-items:center;padding:16px;border-bottom:1px solid #eee;cursor:pointer
+}
+.export-option:hover{background:#f5f5f5}
+.export-option:last-child{border-bottom:none}
+.export-icon{font-size:32px;margin-right:12px}
+.export-text{flex:1}
+.export-title{font-size:15px;font-weight:500;margin-bottom:4px}
+.export-desc{font-size:12px;color:#999}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-bar">
+    <button class="btn-icon" id="historyBtn">📋</button>
+    <div class="title" id="title">第1把 0+0+0=0</div>
+    <div style="width:36px"></div>
+  </div>
+  <div class="btn-bar">
+    <button id="new">新设问</button>
+    <button id="track">简轨</button>
+    <button id="next">下一把</button>
+  </div>
+  <textarea class="input" id="titleInput" placeholder="请输入设问" rows="3"></textarea>
+  <div class="grid-wrap">
+    <div class="group" id="g1"></div>
+    <div class="group" id="g2"></div>
+    <div class="group" id="g3"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- 全屏历史记录页面 -->
+<div class="history-page" id="historyPage">
+  <div class="history-header">
+    <button class="back-btn" id="backBtn">← 返回</button>
+    <h2>占察记录</h2>
+    <div style="display:flex;gap:6px;">
+      <button class="header-btn" id="importBtn">导入</button>
+      <button class="header-btn" id="exportBtn">导出</button>
+      <button class="clear-btn" id="clearBtn">清空</button>
+    </div>
+  </div>
+  <!-- 搜索栏 -->
+  <div class="search-bar">
+    <input type="text" class="search-input" id="searchInput" placeholder="搜索设问、轮相号(1-189)...">
+    <button class="filter-btn" id="sortBtn" style="background:#FF9800;">↓ 倒序</button>
+    <button class="filter-btn" id="dateFilterBtn">日期</button>
+  </div>
+  <div class="history-content" id="historyContent"></div>
+</div>
+
+<!-- 自定义弹窗 -->
+<div class="custom-modal" id="customModal">
+  <div class="custom-modal-content">
+    <div class="custom-modal-header">
+      <h3></h3>
+      <button class="custom-modal-close" onclick="closeCustomModal()">×</button>
+    </div>
+    <div class="custom-modal-body"></div>
+  </div>
+</div>
+
+<!-- 复制菜单 -->
+<div class="copy-menu" id="copyMenu">
+  <div class="copy-menu-item" onclick="copyLastRound()">复制最后一把</div>
+  <div class="copy-menu-item" onclick="copyAllRounds()">复制全部记录</div>
+  <div class="copy-menu-item delete" onclick="deleteRecord()">删除此记录</div>
+  <div class="copy-menu-item cancel" onclick="hideCopyMenu()">取消</div>
+</div>
+
+<!-- 导出格式选择弹窗 -->
+<div id="exportModal" class="custom-modal">
+  <div class="custom-modal-content">
+    <div class="custom-modal-header">
+      <h3>选择导出格式</h3>
+      <button class="custom-modal-close" onclick="closeExportModal()">×</button>
+    </div>
+    <div class="custom-modal-body">
+      <div class="export-option" onclick="exportAs('txt')">
+        <div class="export-icon">📄</div>
+        <div class="export-text">
+          <div class="export-title">TXT格式</div>
+          <div class="export-desc">纯文本格式，便于阅读</div>
+        </div>
+      </div>
+      <div class="export-option" onclick="exportAs('csv')">
+        <div class="export-icon">📊</div>
+        <div class="export-text">
+          <div class="export-title">CSV格式</div>
+          <div class="export-desc">表格格式，可用Excel打开</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 1～189 地藏占察轮相（经文标准版）
+const wheel = {
+1:"求上乘得不退",2:"所求果现当证",3:"求中乘得不退",4:"求下乘得不退",
+5:"求神通得成就",6:"修四梵得成就",7:"修世禅得成就",8:"所欲受得妙戒",
+9:"所曾受得戒具",10:"求上乘未住信",11:"求中乘未住信",12:"求下乘未住信",
+13:"所观人为善友",14:"随所闻是正法",15:"所观人为恶友",16:"随所闻非正教",
+17:"所观人有实德",18:"所观人无实德",19:"所观义不错谬",20:"所观义是错谬",
+21:"有所诵不错谬",22:"有所诵是错谬",23:"所修行不错谬",24:"所见闻是善相",
+25:"有所证为真实",26:"有所学是错谬",27:"所见闻非善相",28:"有所证非正法",
+29:"有所获邪神持",30:"所能说邪智辩",31:"所玄知非人力",32:"应先习智道观",
+33:"应先习禅定道",34:"观所学无障碍",35:"观所学是所宜",36:"观所学非所宜",
+37:"观所学是宿习",38:"观所学非宿习",39:"观所学善增长",40:"观所学方便少",
+41:"观所学无进趣",42:"所求果现未得",43:"求出家当得去",44:"求闻法得教示",
+45:"求经卷得读诵",46:"观所作是魔事",47:"观所作事成就",48:"观所作事不成",
+49:"求大富财盈满",50:"求官位当得获",51:"求寿命得延年",52:"求世仙当得获",
+53:"观学问多所达",54:"观学问少所达",55:"求师友得如意",56:"求弟子得如意",
+57:"求父母得如意",58:"求男女得如意",59:"求妻妾得如意",60:"求同伴得如意",
+61:"观所虑得和合",62:"所观人心怀恚",63:"求无恨得欢喜",64:"求和合得如意",
+65:"所观人心欢喜",66:"所思人得会见",67:"所思人不复会",68:"所请唤得来集",
+69:"所憎恶得离之",70:"所爱敬得近之",71:"观欲聚得和集",72:"观欲聚不和集",
+73:"所请唤不得来",74:"所期人必当至",75:"所期人住不来",76:"所观人得安吉",
+77:"所观人不安吉",78:"所观人已无身",79:"所望见得睹之",80:"所求觅得见之",
+81:"求所闻得吉语",82:"所求见不如意",83:"观所疑即为实",84:"观所疑为不实",
+85:"所观人不和合",86:"求佛事当得获",87:"求供具当得获",88:"求资生得如意",
+89:"求资生少得获",90:"有所求皆当得",91:"有所求皆不得",92:"有所求少得获",
+93:"有所求得如意",94:"有所求速当得",95:"有所求久当得",96:"有所求而损失",
+97:"有所求得吉利",98:"有所求而受苦",99:"观所失求当得",100:"观所失求不得",
+101:"观所失自还得",102:"求离厄得脱难",103:"求离病得除愈",104:"观所去无障难",
+105:"观所去有障难",106:"观所住得安止",107:"观所住不得安",108:"所向处得安快",
+109:"所向处有厄难",110:"所向处为魔网",111:"所向处难开化",112:"所向处可开化",
+113:"所向处自获利",114:"所游路无恼害",115:"所游路有恼害",116:"君民恶饥馑起",
+117:"君民恶多疾疫",118:"君民好国丰乐",119:"君无道国灾乱",120:"君修德灾乱灭",
+121:"君行恶国将破",122:"君修善国还立",123:"观所避得度难",124:"观所避不脱难",
+125:"所住处众安隐",126:"所住处有障难",127:"所依聚众不安",128:"闲静处无诸难",
+129:"观怪异无损害",130:"观怪异有损害",131:"观怪异精进安",132:"观所梦无损害",
+133:"观所梦有损害",134:"观所梦精进安",135:"观所梦为吉利",136:"观障乱速得离",
+137:"观障乱渐得离",138:"观障乱不得离",139:"观障乱一心除",140:"观所难速得脱",
+141:"观所难久得脱",142:"观所难受衰恼",143:"观所难精进脱",144:"观所难命当尽",
+145:"观所患大不调",146:"观所患非人恼",147:"观所患合非人",148:"观所患可疗治",
+149:"观所患难疗治",150:"观所患精进差",151:"观所患久长苦",152:"观所患自当差",
+153:"所向医堪能治",154:"观所疗是对治",155:"所服药当得力",156:"观所患得除愈",
+157:"所向医不能治",158:"观所疗非对治",159:"所服药不得力",160:"观所患命当尽",
+161:"从地狱道中来",162:"从畜生道中来",163:"从饿鬼道中来",164:"从阿修罗道中来",
+165:"从人道中而来",166:"从天道中而来",167:"从在家中而来",168:"从出家中而来",
+169:"曾值佛供养来",170:"曾亲供养贤圣来",171:"曾得闻深法来",172:"舍身已入地狱",
+173:"舍身已作畜生",174:"舍身已作饿鬼",175:"舍身已作阿修罗",176:"舍身已生人道",
+177:"舍身已为人王",178:"舍身已生天道",179:"舍身已为天王",180:"舍身已闻深法",
+181:"舍身已得出家",182:"舍身已值圣僧",183:"舍身已生兜率天",184:"舍身已生净佛国",
+185:"舍身已寻见佛",186:"舍身已住下乘",187:"舍身已住中乘",188:"舍身已获果证",
+189:"舍身已住上乘"
+};
+
+let round = 1;
+let val = [[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]];
+let isSimple = false;
+
+const toast = document.getElementById('toast');
+const input = document.getElementById('titleInput');
+const title = document.getElementById('title');
+const trackBtn = document.getElementById('track');
+const historyBtn = document.getElementById('historyBtn');
+const historyPage = document.getElementById('historyPage');
+const historyContent = document.getElementById('historyContent');
+const backBtn = document.getElementById('backBtn');
+const clearBtn = document.getElementById('clearBtn');
+
+// 展开状态管理
+let expandedIds = new Set();
+
+// 搜索相关状态
+let currentFilter = 'all'; // all, date, lunxiang
+let searchKeyword = '';
+let dateFilter = { startDate: '', endDate: '' };
+let lunxiangFilter = '';
+let isDescending = true; // 默认倒序（最新在前）
+
+// 格式化时间
+function formatTime(date) {
+  const y = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
+  const s = String(date.getSeconds()).padStart(2, '0');
+  return `${y}-${mo}-${d} ${h}:${mi}:${s}`;
+}
+
+// 生成唯一ID（设问+轨道类型）
+function generateId(question, type) {
+  return `${question}_${type}`;
+}
+
+// 读取本地记录
+function getRecords() {
+  const data = localStorage.getItem('chanRecords_v2');
+  return data ? JSON.parse(data) : [];
+}
+
+// 保存记录
+function saveRecords(records) {
+  localStorage.setItem('chanRecords_v2', JSON.stringify(records));
+}
+
+// 实时保存当前轮次
+function saveCurrentRound() {
+  const question = input.value.trim();
+  if (!question) return;
+  
+  const typeStr = isSimple ? "简轨" : "全轨";
+  const id = generateId(question, typeStr);
+  const records = getRecords();
+  
+  const s1 = val[0].reduce((t, v) => t + v, 0);
+  const s2 = val[1].reduce((t, v) => t + v, 0);
+  const s3 = val[2].reduce((t, v) => t + v, 0);
+  const total = s1 + s2 + s3;
+  
+  // 构建当前轮次数据
+  const currentRound = {
+    roundNumber: round,
+    sum1: s1,
+    sum2: s2,
+    sum3: s3,
+    total: total,
+    lunxiang: wheel[total] || "",
+    time: formatTime(new Date()),
+    values: JSON.parse(JSON.stringify(val)),
+    yanyan: null,
+    beizhu: ""
+  };
+  
+  // 查找或创建该设问的记录
+  let record = records.find(r => r.id === id);
+  if (!record) {
+    // 新设问
+    record = {
+      id: id,
+      question: question,
+      type: typeStr,
+      rounds: []
+    };
+    // 添加到数组开头（倒序）
+    records.unshift(record);
+  } else {
+    // 将该记录移到最前面（更新为最新），保留原有的yanyan和beizhu
+    const index = records.indexOf(record);
+    records.splice(index, 1);
+    records.unshift(record);
+  }
+  
+  // 更新或添加当前轮次
+  const roundIndex = record.rounds.findIndex(r => r.roundNumber === round);
+  if (roundIndex >= 0) {
+    // 更新时保留原有的yanyan和beizhu
+    const existingYanyan = record.rounds[roundIndex].yanyan;
+    const existingBeizhu = record.rounds[roundIndex].beizhu;
+    record.rounds[roundIndex] = {
+      ...currentRound,
+      yanyan: existingYanyan !== undefined ? existingYanyan : null,
+      beizhu: existingBeizhu !== undefined ? existingBeizhu : ""
+    };
+  } else {
+    record.rounds.push(currentRound); // 添加
+  }
+  
+  saveRecords(records);
+}
+
+// 切换展开/合并状态
+function toggleExpand(id) {
+  const card = document.querySelector(`[data-id="${id}"]`);
+  if (!card) return;
+  
+  const lastRoundDiv = card.querySelector('.last-round');
+  const allRoundsDiv = card.querySelector('.all-rounds');
+  const btn = card.querySelector('.expand-btn');
+  
+  if (expandedIds.has(id)) {
+    // 合并
+    expandedIds.delete(id);
+    allRoundsDiv.style.display = 'none';
+    lastRoundDiv.style.display = 'block';
+    btn.textContent = '展开';
+  } else {
+    // 展开
+    expandedIds.add(id);
+    allRoundsDiv.style.display = 'block';
+    lastRoundDiv.style.display = 'none';
+    btn.textContent = '合并';
+  }
+}
+
+// 格式化时间（显示月-日 时:分）
+function formatTimeShort(time) {
+  // 输入: "2026-04-25 06:40:00"
+  // 输出: "04-25 06:40"
+  if (time.length >= 16) {
+    const monthDay = time.substring(5, 10); // "04-25"
+    const hourMin = time.substring(11, 16); // "06:40"
+    return monthDay + ' ' + hourMin;
+  }
+  return time;
+}
+
+// 渲染历史记录（支持合并/展开、搜索高亮和筛选）
+function renderRecords() {
+  let records = getRecords();
+  
+  // 筛选记录
+  if (searchKeyword) {
+    const lowerKeyword = searchKeyword.toLowerCase();
+    records = records.filter(record => {
+      // 搜索设问
+      if (record.question.toLowerCase().includes(lowerKeyword)) {
+        return true;
+      }
+      // 搜索轮相
+      if (record.rounds.some(r => r.lunxiang.toLowerCase().includes(lowerKeyword))) {
+        return true;
+      }
+      // 搜索时间
+      if (record.rounds.some(r => r.time.includes(searchKeyword))) {
+        return true;
+      }
+      // 搜索备注
+      if (record.rounds.some(r => r.beizhu && r.beizhu.toLowerCase().includes(lowerKeyword))) {
+        return true;
+      }
+      return false;
+    });
+  }
+  
+  // 日期筛选
+  if (currentFilter === 'date' && dateFilter.startDate && dateFilter.endDate) {
+    records = records.filter(record => {
+      return record.rounds.some(r => {
+        const date = r.time.split(' ')[0];
+        return date >= dateFilter.startDate && date <= dateFilter.endDate;
+      });
+    });
+  }
+  
+  // 轮相筛选
+  if (currentFilter === 'lunxiang' && lunxiangFilter) {
+    records = records.filter(record => {
+      return record.rounds.some(r => r.lunxiang === lunxiangFilter);
+    });
+  }
+  
+  if (!records.length) {
+    historyContent.innerHTML = '<div class="record-empty">未找到匹配记录</div>';
+    return;
+  }
+  
+  historyContent.innerHTML = records.map(record => {
+    // 根据排序状态获取轮次列表
+    // 倒序：最新在前（roundNumber大的在前），正序：最旧在前（roundNumber小的在前）
+    const allRounds = [...record.rounds].sort((a, b) => 
+      isDescending ? b.roundNumber - a.roundNumber : a.roundNumber - b.roundNumber
+    );
+    const lastRound = allRounds[0];
+    const isExpanded = expandedIds.has(record.id);
+    
+    return `
+      <div class="record-card" data-id="${record.id}"
+           oncontextmenu="showCopyMenu(event, '${record.id}')"
+           ontouchstart="startLongPress(event, '${record.id}')"
+           ontouchend="endLongPress()"
+           ontouchmove="endLongPress()">
+        <div class="record-header">
+          <div class="card-info">
+            <div class="record-question">${highlightText(escapeHtml(record.question))}</div>
+            <div class="record-type">${record.type}</div>
+          </div>
+          <button class="expand-btn" onclick="toggleExpand('${record.id}')">
+            ${isExpanded ? '合并' : '展开'}
+          </button>
+        </div>
+        
+        ${lastRound ? `
+        <!-- 默认显示最后一把（两行） -->
+        <div class="last-round" style="${isExpanded ? 'display:none' : ''}">
+          <div class="round-item">
+            <div class="round-row1">
+              <div class="round-left">
+                <span class="round-result">第${lastRound.roundNumber}把 ${lastRound.sum1}+${lastRound.sum2}+${lastRound.sum3}=${lastRound.total}</span>
+                <span class="round-lunxiang">${highlightText(lastRound.lunxiang)}</span>
+              </div>
+              <div class="round-right">
+                <button class="round-btn ${getYanyanClass(lastRound.yanyan)}" onclick="showYanyan('${record.id}', ${lastRound.roundNumber}, ${JSON.stringify(lastRound.yanyan)})">
+                  ${getYanyanText(lastRound.yanyan)}
+                </button>
+                <button class="round-btn ${lastRound.beizhu ? 'has-beizhu' : ''}" onclick="showBeizhu('${record.id}', ${lastRound.roundNumber}, '${escapeHtml(lastRound.beizhu || '')}')">
+                  备注${lastRound.beizhu ? '✓' : ''}
+                </button>
+              </div>
+            </div>
+            <div class="round-row2">
+              <span class="round-time">${highlightText(lastRound.time)}</span>
+              ${lastRound.beizhu ? `<span class="round-beizhu-text">${highlightText(escapeHtml(lastRound.beizhu))}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        ` : ''}
+        
+        <!-- 展开显示所有把次（两行） -->
+        <div class="all-rounds" style="${isExpanded ? '' : 'display:none'}">
+          ${allRounds.map(r => `
+            <div class="round-item">
+              <div class="round-row1">
+                <div class="round-left">
+                  <span class="round-result">第${r.roundNumber}把 ${r.sum1}+${r.sum2}+${r.sum3}=${r.total}</span>
+                  <span class="round-lunxiang">${highlightText(r.lunxiang)}</span>
+                </div>
+                <div class="round-right">
+                  <button class="round-btn ${getYanyanClass(r.yanyan)}" onclick="showYanyan('${record.id}', ${r.roundNumber}, ${JSON.stringify(r.yanyan)})">
+                    ${getYanyanText(r.yanyan)}
+                  </button>
+                  <button class="round-btn ${r.beizhu ? 'has-beizhu' : ''}" onclick="showBeizhu('${record.id}', ${r.roundNumber}, '${escapeHtml(r.beizhu || '')}')">
+                    备注${r.beizhu ? '✓' : ''}
+                  </button>
+                </div>
+              </div>
+              <div class="round-row2">
+                <span class="round-time">${highlightText(r.time)}</span>
+                ${r.beizhu ? `<span class="round-beizhu-text">${highlightText(escapeHtml(r.beizhu))}</span>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 高亮关键字
+function highlightText(text) {
+  if (!searchKeyword) return text;
+  
+  const regex = new RegExp(`(${escapeRegExp(searchKeyword)})`, 'gi');
+  return text.replace(regex, '<span class="highlight">$1</span>');
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// HTML转义
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// 获取应验状态样式类
+function getYanyanClass(yanyan) {
+  if (yanyan === true) return 'yanyan-true';
+  if (yanyan === false) return 'yanyan-false';
+  if (yanyan === 'pending') return 'yanyan-pending';
+  return '';
+}
+
+// 获取应验状态文本
+function getYanyanText(yanyan) {
+  if (yanyan === true) return '已应验';
+  if (yanyan === false) return '未应验';
+  if (yanyan === 'pending') return '待观察';
+  return '应验';
+}
+
+// 长按处理
+let longPressTimer = null;
+
+function startLongPress(e, recordId) {
+  longPressTimer = setTimeout(() => {
+    showCopyMenu(e, recordId);
+  }, 500);
+}
+
+function endLongPress() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+}
+
+// 显示复制菜单
+function showCopyMenu(e, recordId) {
+  e.preventDefault();
+  
+  const menu = document.getElementById('copyMenu');
+  menu.dataset.recordId = recordId;
+  
+  // 定位菜单
+  const touch = e.touches ? e.touches[0] : e;
+  const menuWidth = 140;
+  const menuHeight = 120;
+  let left = touch.clientX;
+  let top = touch.clientY;
+  
+  // 边界检测
+  if (left + menuWidth > window.innerWidth) {
+    left = window.innerWidth - menuWidth - 10;
+  }
+  if (top + menuHeight > window.innerHeight) {
+    top = window.innerHeight - menuHeight - 10;
+  }
+  
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+  menu.classList.add('show');
+}
+
+// 隐藏复制菜单
+function hideCopyMenu() {
+  const menu = document.getElementById('copyMenu');
+  if (menu) {
+    menu.classList.remove('show');
+  }
+}
+
+// 复制最后一把
+function copyLastRound() {
+  const menu = document.getElementById('copyMenu');
+  const recordId = menu.dataset.recordId;
+  const records = getRecords();
+  const record = records.find(r => r.id === recordId);
+  
+  if (!record) {
+    hideCopyMenu();
+    return;
+  }
+  
+  const sortedRounds = [...record.rounds].sort((a, b) => b.roundNumber - a.roundNumber);
+  const lastRound = sortedRounds[0];
+  
+  if (!lastRound) {
+    hideCopyMenu();
+    return;
+  }
+  
+  const text = formatSingleRound(record, lastRound);
+  
+  hideCopyMenu();
+  copyToClipboard(text).then(() => {
+    showTip('已复制最后一把记录');
+  }).catch(() => {
+    showTip('复制失败，请重试');
+  });
+}
+
+// 复制全部记录
+function copyAllRounds() {
+  const menu = document.getElementById('copyMenu');
+  const recordId = menu.dataset.recordId;
+  const records = getRecords();
+  const record = records.find(r => r.id === recordId);
+  
+  if (!record) {
+    hideCopyMenu();
+    return;
+  }
+  
+  const text = formatAllRounds(record);
+  
+  hideCopyMenu();
+  copyToClipboard(text).then(() => {
+    showTip('已复制全部记录');
+  }).catch(() => {
+    showTip('复制失败，请重试');
+  });
+}
+
+// 删除记录
+function deleteRecord() {
+  const menu = document.getElementById('copyMenu');
+  const recordId = menu.dataset.recordId;
+  
+  if (confirm('确定要删除此记录吗？\n此操作不可恢复。')) {
+    const records = getRecords();
+    const index = records.findIndex(r => r.id === recordId);
+    
+    if (index >= 0) {
+      records.splice(index, 1);
+      saveRecords(records);
+      renderRecords();
+      showTip('已删除记录');
+    }
+  }
+  
+  hideCopyMenu();
+}
+
+// 格式化单条轮次
+function formatSingleRound(record, round) {
+  let text = `设问：${record.question}\n`;
+  text += `类型：${record.type}\n`;
+  text += `━━━━━━━━━━━━━━\n`;
+  text += `第${round.roundNumber}把 ${round.sum1}+${round.sum2}+${round.sum3}=${round.total} ${round.lunxiang}\n`;
+  text += `时间：${round.time}\n`;
+  if (round.yanyan !== null && round.yanyan !== undefined) {
+    text += `应验：${getYanyanText(round.yanyan)}\n`;
+  }
+  if (round.beizhu) {
+    text += `备注：${round.beizhu}\n`;
+  }
+  return text;
+}
+
+// 格式化所有轮次
+function formatAllRounds(record) {
+  let text = `设问：${record.question}\n`;
+  text += `类型：${record.type}\n`;
+  
+  // 根据当前排序状态排序
+  const sortedRounds = [...record.rounds].sort((a, b) => 
+    isDescending ? b.roundNumber - a.roundNumber : a.roundNumber - b.roundNumber
+  );
+  
+  sortedRounds.forEach((round) => {
+    text += `━━━━━━━━━━━━━━\n`;
+    text += `第${round.roundNumber}把 ${round.sum1}+${round.sum2}+${round.sum3}=${round.total} ${round.lunxiang}\n`;
+    text += `时间：${round.time}\n`;
+    if (round.yanyan !== null && round.yanyan !== undefined) {
+      text += `应验：${getYanyanText(round.yanyan)}\n`;
+    }
+    if (round.beizhu) {
+      text += `备注：${round.beizhu}\n`;
+    }
+  });
+  
+  text += `━━━━━━━━━━━━━━\n`;
+  return text;
+}
+
+// 复制到剪贴板
+function copyToClipboard(text) {
+  return new Promise((resolve, reject) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        resolve(true);
+      }).catch((err) => {
+        // 回退到传统方法
+        fallbackCopy(text, resolve, reject);
+      });
+    } else {
+      fallbackCopy(text, resolve, reject);
+    }
+  });
+}
+
+// 传统复制方法（作为回退）
+function fallbackCopy(text, resolve, reject) {
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const success = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    if (success) {
+      resolve(true);
+    } else {
+      reject(new Error('复制失败'));
+    }
+  } catch (err) {
+    reject(err);
+  }
+}
+
+// 点击其他地方关闭菜单
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.copy-menu') && !e.target.closest('.record-card')) {
+    hideCopyMenu();
+  }
+});
+
+// 显示应验状态选择弹窗
+function showYanyan(recordId, roundNumber, currentValue) {
+  const options = [
+    { value: true, text: '已应验', color: '#4CAF50' },
+    { value: false, text: '未应验', color: '#f44336' },
+    { value: 'pending', text: '待观察', color: '#FF9800' },
+    { value: null, text: '清除', color: '#999' }
+  ];
+  
+  const html = options.map(opt => `
+    <div class="yanyan-option" style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;"
+         onclick="setYanyan('${recordId}', ${roundNumber}, ${opt.value === null ? 'null' : JSON.stringify(opt.value)})"
+         onmouseover="this.style.background='#f5f5f5'"
+         onmouseout="this.style.background=''">
+      <span style="color: ${opt.color}; font-weight: 500;">${opt.text}</span>
+      ${currentValue === opt.value ? ' ✓' : ''}
+    </div>
+  `).join('');
+  
+  showCustomModal('应验状态', html);
+}
+
+// 设置应验状态
+function setYanyan(recordId, roundNumber, value) {
+  const parsedValue = value === 'null' || value === null ? null : value;
+  const records = getRecords();
+  const record = records.find(r => r.id === recordId);
+  if (record) {
+    const round = record.rounds.find(r => r.roundNumber === roundNumber);
+    if (round) {
+      round.yanyan = parsedValue;
+      saveRecords(records);
+      renderRecords();
+      closeCustomModal();
+    }
+  }
+}
+
+// 显示备注输入弹窗
+function showBeizhu(recordId, roundNumber, currentValue) {
+  const html = `
+    <div style="padding: 16px;">
+      <textarea id="beizhuInput" style="width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: none; box-sizing: border-box;">${currentValue}</textarea>
+      <div style="margin-top: 12px; text-align: right;">
+        <button onclick="closeCustomModal()" style="padding: 8px 16px; margin-right: 8px; border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer;">取消</button>
+        <button onclick="setBeizhu('${recordId}', ${roundNumber})" style="padding: 8px 16px; border: none; background: #2196F3; color: #fff; border-radius: 4px; cursor: pointer;">保存</button>
+      </div>
+    </div>
+  `;
+  
+  showCustomModal('备注', html);
+}
+
+// 设置备注
+function setBeizhu(recordId, roundNumber) {
+  const value = document.getElementById('beizhuInput').value.trim();
+  const records = getRecords();
+  const record = records.find(r => r.id === recordId);
+  if (record) {
+    const round = record.rounds.find(r => r.roundNumber === roundNumber);
+    if (round) {
+      round.beizhu = value;
+      saveRecords(records);
+      renderRecords();
+      closeCustomModal();
+    }
+  }
+}
+
+// 显示自定义弹窗
+function showCustomModal(title, content) {
+  const modal = document.getElementById('customModal');
+  modal.querySelector('h3').textContent = title;
+  modal.querySelector('.custom-modal-body').innerHTML = content;
+  modal.classList.add('show');
+  
+  // 点击背景关闭
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      closeCustomModal();
+    }
+  };
+}
+
+// 关闭自定义弹窗
+function closeCustomModal() {
+  const modal = document.getElementById('customModal');
+  modal.classList.remove('show');
+}
+
+// 日期选择器
+function showDatePicker() {
+  const today = new Date().toISOString().split('T')[0];
+  
+  showCustomModal('按日期筛选', `
+    <div style="padding: 12px 0;">
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; margin-bottom: 4px; font-size: 14px;">开始日期：</label>
+        <input type="date" id="startDate" value="${today}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; margin-bottom: 4px; font-size: 14px;">结束日期：</label>
+        <input type="date" id="endDate" value="${today}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+      </div>
+      <div style="text-align: right; margin-top: 16px;">
+        <button onclick="clearDateFilter()" style="padding: 10px 16px; margin-right: 8px; border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer; font-size: 14px;">清除</button>
+        <button onclick="applyDateFilter()" style="padding: 10px 16px; border: none; background: #4682B4; color: #fff; border-radius: 4px; cursor: pointer; font-size: 14px;">确定</button>
+      </div>
+    </div>
+  `);
+}
+
+function applyDateFilter() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  
+  if (!startDate || !endDate) {
+    showTip('请选择日期范围');
+    return;
+  }
+  
+  dateFilter = { startDate, endDate };
+  currentFilter = 'date';
+  lunxiangFilter = '';
+  searchKeyword = '';
+  document.getElementById('searchInput').value = '';
+  
+  // 更新按钮状态
+  document.getElementById('dateFilterBtn').classList.add('active');
+  
+  closeCustomModal();
+  renderRecords();
+}
+
+function clearDateFilter() {
+  currentFilter = 'all';
+  dateFilter = { startDate: '', endDate: '' };
+  document.getElementById('dateFilterBtn').classList.remove('active');
+  closeCustomModal();
+  renderRecords();
+}
+
+// 绑定搜索和筛选按钮事件
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  const value = e.target.value.trim();
+  
+  // 判断是否为纯数字（轮相号搜索）
+  if (/^\d+$/.test(value)) {
+    const lunxiangNum = parseInt(value);
+    if (lunxiangNum >= 1 && lunxiangNum <= 189) {
+      // 按轮相号搜索
+      searchByLunxiangNumber(lunxiangNum);
+    } else {
+      // 数字超出范围，显示提示
+      showTip('轮相号范围：1-189');
+      searchKeyword = '';
+      currentFilter = 'all';
+      renderRecords();
+    }
+  } else {
+    // 关键字搜索
+    searchKeyword = value;
+    currentFilter = 'all';
+    document.getElementById('dateFilterBtn').classList.remove('active');
+    renderRecords();
+  }
+});
+
+// 按轮相号搜索
+function searchByLunxiangNumber(num) {
+  const records = getRecords();
+  const filteredRecords = records.filter(record => {
+    return record.rounds.some(r => r.total === num);
+  });
+  
+  currentFilter = 'lunxiang';
+  searchKeyword = num.toString();
+  
+  // 更新按钮状态
+  document.getElementById('dateFilterBtn').classList.remove('active');
+  
+  renderFilteredRecords(filteredRecords);
+}
+
+// 渲染过滤后的记录
+function renderFilteredRecords(filteredRecords) {
+  if (!filteredRecords.length) {
+    historyContent.innerHTML = '<div class="record-empty">未找到匹配记录</div>';
+    return;
+  }
+  
+  historyContent.innerHTML = filteredRecords.map(record => {
+    // 获取最后一把
+    const sortedRounds = [...record.rounds].sort((a, b) => b.roundNumber - a.roundNumber);
+    const lastRound = sortedRounds[0];
+    const isExpanded = expandedIds.has(record.id);
+    
+    return `
+      <div class="record-card" data-id="${record.id}"
+           oncontextmenu="showCopyMenu(event, '${record.id}')"
+           ontouchstart="startLongPress(event, '${record.id}')"
+           ontouchend="endLongPress()"
+           ontouchmove="endLongPress()">
+        <div class="record-header">
+          <div class="card-info">
+            <div class="record-question">${highlightText(escapeHtml(record.question))}</div>
+            <div class="record-type">${record.type}</div>
+          </div>
+          <button class="expand-btn" onclick="toggleExpand('${record.id}')">
+            ${isExpanded ? '合并' : '展开'}
+          </button>
+        </div>
+        
+        ${lastRound ? `
+        <!-- 默认显示最后一把（两行） -->
+        <div class="last-round" style="${isExpanded ? 'display:none' : ''}">
+          <div class="round-item">
+            <div class="round-row1">
+              <div class="round-left">
+                <span class="round-result">第${lastRound.roundNumber}把 ${lastRound.sum1}+${lastRound.sum2}+${lastRound.sum3}=${lastRound.total}</span>
+                <span class="round-lunxiang">${highlightText(lastRound.lunxiang)}</span>
+              </div>
+              <div class="round-right">
+                <button class="round-btn ${getYanyanClass(lastRound.yanyan)}" onclick="showYanyan('${record.id}', ${lastRound.roundNumber}, ${JSON.stringify(lastRound.yanyan)})">
+                  ${getYanyanText(lastRound.yanyan)}
+                </button>
+                <button class="round-btn ${lastRound.beizhu ? 'has-beizhu' : ''}" onclick="showBeizhu('${record.id}', ${lastRound.roundNumber}, '${escapeHtml(lastRound.beizhu || '')}')">
+                  备注${lastRound.beizhu ? '✓' : ''}
+                </button>
+              </div>
+            </div>
+            <div class="round-row2">
+              <span class="round-time">${highlightText(lastRound.time)}</span>
+              ${lastRound.beizhu ? `<span class="round-beizhu-text">${highlightText(escapeHtml(lastRound.beizhu))}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        ` : ''}
+        
+        <!-- 展开显示所有把次（两行） -->
+        <div class="all-rounds" style="${isExpanded ? '' : 'display:none'}">
+          ${allRounds.map(r => `
+            <div class="round-item">
+              <div class="round-row1">
+                <div class="round-left">
+                  <span class="round-result">第${r.roundNumber}把 ${r.sum1}+${r.sum2}+${r.sum3}=${r.total}</span>
+                  <span class="round-lunxiang">${highlightText(r.lunxiang)}</span>
+                </div>
+                <div class="round-right">
+                  <button class="round-btn ${getYanyanClass(r.yanyan)}" onclick="showYanyan('${record.id}', ${r.roundNumber}, ${JSON.stringify(r.yanyan)})">
+                    ${getYanyanText(r.yanyan)}
+                  </button>
+                  <button class="round-btn ${r.beizhu ? 'has-beizhu' : ''}" onclick="showBeizhu('${record.id}', ${r.roundNumber}, '${escapeHtml(r.beizhu || '')}')">
+                    备注${r.beizhu ? '✓' : ''}
+                  </button>
+                </div>
+              </div>
+              <div class="round-row2">
+                <span class="round-time">${highlightText(r.time)}</span>
+                ${r.beizhu ? `<span class="round-beizhu-text">${highlightText(escapeHtml(r.beizhu))}</span>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('dateFilterBtn').addEventListener('click', () => {
+  showDatePicker();
+});
+
+// 排序按钮事件
+document.getElementById('sortBtn').addEventListener('click', () => {
+  isDescending = !isDescending;
+  const sortBtn = document.getElementById('sortBtn');
+  if (isDescending) {
+    sortBtn.textContent = '↓ 倒序';
+    sortBtn.style.background = '#FF9800';
+  } else {
+    sortBtn.textContent = '↑ 正序';
+    sortBtn.style.background = '#4CAF50';
+  }
+  renderRecords();
+});
+
+// 提示
+function showTip(text) {
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1500);
+}
+
+// 自动缩字
+function autoScaleFont() {
+  input.style.fontSize = "14px";
+  if (input.scrollHeight > input.clientHeight) input.style.fontSize = "13px";
+  if (input.scrollHeight > input.clientHeight) input.style.fontSize = "12px";
+}
+input.addEventListener('input', autoScaleFont);
+
+// 根据数字确定分组索引
+function getGroupIndex(num) {
+  return Math.floor((num - 1) / 3);
+}
+
+// 创建数字组
+function createGroup(el, g) {
+  let h = '';
+  for (let r = 1; r <= 3; r++) {
+    h += '<div class="row">';
+    for (let c = 1; c <= 6; c++) {
+      let num = (r - 1) * 6 + c;
+      h += `<button class="btn" data-g="${g}" data-n="${num}" onclick="clickNum(${g},${num})">${num}</button>`;
+    }
+    h += '</div>';
+  }
+  el.innerHTML = h;
+}
+
+// 切换简轨/全轨
+trackBtn.onclick = () => {
+  isSimple = !isSimple;
+  trackBtn.textContent = isSimple ? "全轨" : "简轨";
+};
+
+// 点击数字
+function clickNum(g, num) {
+  if (!input.value.trim()) {
+    showTip("请先输入设问");
+    return;
+  }
+  
+  // 约束规则：已完成掷次不可更改
+  if (g === 0 && val[1].some(v => v !== 0)) {
+    showTip("第1掷结果不可更改");
+    return;
+  }
+  if (g === 1 && val[2].some(v => v !== 0)) {
+    showTip("第2掷结果不可更改");
+    return;
+  }
+  
+  const idx = getGroupIndex(num);
+  val[g][idx] = val[g][idx] === num ? 0 : num;
+  render(g);
+  updateSum();
+  
+  // 实时保存
+  saveCurrentRound();
+}
+
+// 刷新选中状态
+function render(g) {
+  document.querySelectorAll(`[data-g="${g}"]`).forEach(b => {
+    const n = +b.dataset.n;
+    const i = getGroupIndex(n);
+    b.classList.toggle('selected', val[g][i] === n);
+  });
+}
+
+// 计算总和+轮相
+function updateSum() {
+  const s1 = val[0].reduce((t, v) => t + v, 0);
+  const s2 = val[1].reduce((t, v) => t + v, 0);
+  const s3 = val[2].reduce((t, v) => t + v, 0);
+  const total = s1 + s2 + s3;
+  let text = `第${round}把 ${s1}+${s2}+${s3}=${total}`;
+  if (total >= 1 && total <= 189) text += `　${wheel[total]}`;
+  title.textContent = text;
+}
+
+// 重置
+function resetAll() {
+  val = [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]];
+  document.querySelectorAll('.btn').forEach(b => b.classList.remove('selected'));
+  input.style.fontSize = "14px";
+  updateSum();
+}
+
+document.getElementById('new').onclick = () => {
+  round = 1;
+  input.value = '';
+  resetAll();
+};
+
+document.getElementById('next').onclick = () => {
+  if (!input.value.trim()) {
+    showTip("请先输入设问");
+    return;
+  }
+  
+  const hasSelection = val[0].some(v => v !== 0) || val[1].some(v => v !== 0) || val[2].some(v => v !== 0);
+  if (!hasSelection) {
+    showTip("请先完成占察");
+    return;
+  }
+  
+  // 已经在实时保存中保存，这里只切换到下一把
+  round++;
+  resetAll();
+};
+
+// 全屏历史页面
+historyBtn.onclick = () => {
+  renderRecords();
+  historyPage.classList.add('show');
+};
+
+backBtn.onclick = () => {
+  historyPage.classList.remove('show');
+};
+
+// 清空记录
+clearBtn.onclick = () => {
+  if (confirm('确定要清空所有占察记录吗？')) {
+    localStorage.removeItem('chanRecords_v2');
+    renderRecords();
+    showTip('已清空记录');
+  }
+};
+
+// 初始化
+createGroup(document.getElementById('g1'), 0);
+createGroup(document.getElementById('g2'), 1);
+createGroup(document.getElementById('g3'), 2);
+updateSum();
+
+// ========== 导入导出功能 ==========
+
+// 显示导出格式选择弹窗
+function showExportModal() {
+  document.getElementById('exportModal').classList.add('show');
+}
+
+// 关闭导出弹窗
+function closeExportModal() {
+  document.getElementById('exportModal').classList.remove('show');
+}
+
+// 导出功能
+function exportAs(format) {
+  const records = getRecords();
+  
+  if (records.length === 0) {
+    closeExportModal();
+    showTip('暂无记录可导出');
+    return;
+  }
+  
+  closeExportModal();
+  
+  if (format === 'txt') {
+    exportAsTxt(records);
+  } else if (format === 'csv') {
+    exportAsCsv(records);
+  }
+}
+
+// 导出为TXT格式
+function exportAsTxt(records) {
+  let text = '';
+  
+  // 获取当前日期用于文件名
+  const now = new Date();
+  const dateStr = now.toISOString().substring(0, 10);
+  const defaultFilename = `占察记录_${dateStr}.txt`;
+  
+  records.forEach(record => {
+    text += '═══════════════════════════════════\n';
+    text += `设问：${record.question}\n`;
+    text += `类型：${record.type}\n`;
+    text += '═══════════════════════════════════\n';
+    
+    // 根据当前排序状态排序
+    const sortedRounds = [...record.rounds].sort((a, b) => 
+      isDescending ? b.roundNumber - a.roundNumber : a.roundNumber - b.roundNumber
+    );
+    
+    sortedRounds.forEach(round => {
+      text += `第${round.roundNumber}把 ${round.sum1}+${round.sum2}+${round.sum3}=${round.total} ${round.lunxiang}\n`;
+      text += `时间：${round.time}\n`;
+      if (round.yanyan !== null && round.yanyan !== undefined) {
+        text += `应验：${getYanyanText(round.yanyan)}\n`;
+      }
+      if (round.beizhu) {
+        text += `备注：${round.beizhu}\n`;
+      }
+      text += '────────────────────────────────────\n';
+    });
+    
+    text += '\n';
+  });
+  
+  downloadFile(text, defaultFilename, 'text/plain');
+}
+
+// 导出为CSV格式
+function exportAsCsv(records) {
+  let csv = '\uFEFF'; // BOM for UTF-8
+  csv += '设问,类型,把数,第一组和,第二组和,第三组和,总和,轮相,时间,应验,备注\n';
+  
+  // 获取当前日期用于文件名
+  const now = new Date();
+  const dateStr = now.toISOString().substring(0, 10);
+  const defaultFilename = `占察记录_${dateStr}.csv`;
+  
+  records.forEach(record => {
+    // 根据当前排序状态排序
+    const sortedRounds = [...record.rounds].sort((a, b) => 
+      isDescending ? b.roundNumber - a.roundNumber : a.roundNumber - b.roundNumber
+    );
+    
+    sortedRounds.forEach(round => {
+      csv += `"${escapeCsv(record.question)}",`;
+      csv += `"${escapeCsv(record.type)}",`;
+      csv += `${round.roundNumber},`;
+      csv += `${round.sum1},`;
+      csv += `${round.sum2},`;
+      csv += `${round.sum3},`;
+      csv += `${round.total},`;
+      csv += `"${escapeCsv(round.lunxiang)}",`;
+      csv += `"${escapeCsv(round.time)}",`;
+      csv += `"${escapeCsv(getYanyanText(round.yanyan))}",`;
+      csv += `"${escapeCsv(round.beizhu || '')}"\n`;
+    });
+  });
+  
+  downloadFile(csv, defaultFilename, 'text/csv');
+}
+
+// CSV字段转义
+function escapeCsv(str) {
+  if (!str) return '';
+  return str.replace(/"/g, '""');
+}
+
+// 下载文件
+function downloadFile(content, filename, mimeType) {
+  showExportDialog(content, filename, mimeType);
+}
+
+// 显示导出选项弹窗
+function showExportDialog(content, filename, mimeType) {
+  // 创建 Blob URL
+  const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  
+  // 创建 Data URL（备选）
+  const dataUrl = 'data:' + mimeType + ';charset=utf-8,' + encodeURIComponent(content);
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'exportOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'background:#fff;border-radius:12px;padding:16px;width:100%;max-width:360px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+  
+  dialog.innerHTML = `
+    <div style="font-size:16px;font-weight:500;margin-bottom:8px;text-align:center;">📁 ${filename}</div>
+    
+    <!-- 下载链接 -->
+    <a id="downloadLink" href="${blobUrl}" download="${filename}" style="display:block;width:100%;padding:14px;background:#4CAF50;color:#fff;border-radius:8px;font-size:15px;text-align:center;text-decoration:none;margin-bottom:8px;cursor:pointer;">
+      ⬇️ 点击下载文件
+    </a>
+    
+    <div style="font-size:12px;color:#666;text-align:center;margin-bottom:12px;">
+      点击上方按钮下载<br>
+      或长按下方文本框复制内容
+    </div>
+    
+    <!-- 复制按钮 -->
+    <button id="copyContentBtn" style="width:100%;padding:12px;background:#2196F3;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-bottom:8px;">
+      📋 一键复制内容
+    </button>
+    
+    <!-- 内容预览 -->
+    <div style="font-size:12px;color:#666;margin-bottom:4px;">📝 内容预览：</div>
+    <textarea id="exportContentArea" style="width:100%;height:150px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:11px;resize:none;box-sizing:border-box;line-height:1.4;" readonly>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+    
+    <div style="margin-top:12px;text-align:center;">
+      <button id="closeExportDialog" style="padding:10px 32px;background:#f0f0f0;color:#333;border:none;border-radius:8px;font-size:14px;cursor:pointer;">关闭</button>
+    </div>
+  `;
+  
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  
+  // 下载链接点击
+  const downloadLink = dialog.querySelector('#downloadLink');
+  downloadLink.onclick = function(e) {
+    // 在新窗口打开下载（某些浏览器需要）
+    setTimeout(() => {
+      showTip('请查看通知栏或下载管理');
+    }, 500);
+  };
+  
+  // 复制按钮
+  dialog.querySelector('#copyContentBtn').onclick = function() {
+    copyToClipboard(content).then(() => {
+      this.textContent = '✓ 已复制';
+      this.style.background = '#FF9800';
+      setTimeout(() => {
+        this.textContent = '📋 一键复制内容';
+        this.style.background = '#2196F3';
+      }, 2000);
+    }).catch(() => {
+      const textarea = dialog.querySelector('#exportContentArea');
+      textarea.select();
+      textarea.focus();
+      showTip('请手动选择并复制');
+    });
+  };
+  
+  // 关闭按钮
+  dialog.querySelector('#closeExportDialog').onclick = function() {
+    URL.revokeObjectURL(blobUrl);
+    document.body.removeChild(overlay);
+  };
+  
+  // 点击遮罩关闭
+  overlay.onclick = (e) => {
+    if (e.target === overlay) {
+      URL.revokeObjectURL(blobUrl);
+      document.body.removeChild(overlay);
+    }
+  };
+}
+
+// 直接下载（备用）
+function downloadFileDirect(content, filename, mimeType, btn) {
+  const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  
+  showTip('请查看通知栏或下载管理');
+  
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// 导入功能
+function importRecords() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.txt,.csv';
+  
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    
+    if (file.name.endsWith('.txt')) {
+      reader.onload = (e) => {
+        const records = parseTxtFile(e.target.result);
+        mergeImportedRecords(records);
+      };
+      reader.readAsText(file, 'UTF-8');
+    } else if (file.name.endsWith('.csv')) {
+      reader.onload = (e) => {
+        const records = parseCsvFile(e.target.result);
+        mergeImportedRecords(records);
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+  };
+  
+  input.click();
+}
+
+// 解析TXT格式文件
+function parseTxtFile(content) {
+  const records = [];
+  const sections = content.split(/═══════════════════════════════════/);
+  
+  sections.forEach(section => {
+    if (!section.trim()) return;
+    
+    const lines = section.trim().split('\n');
+    const record = {
+      id: '',
+      question: '',
+      type: '全轨',
+      rounds: []
+    };
+    
+    let currentRound = null;
+    
+    lines.forEach(line => {
+      if (line.startsWith('设问：')) {
+        record.question = line.substring(3).trim();
+      } else if (line.startsWith('类型：')) {
+        record.type = line.substring(3).trim();
+      } else if (line.match(/^第\d+把/)) {
+        if (currentRound) {
+          record.rounds.push(currentRound);
+        }
+        
+        const match = line.match(/第(\d+)把\s+(\d+)\+(\d+)\+(\d+)=(\d+)\s+(.+)/);
+        if (match) {
+          currentRound = {
+            roundNumber: parseInt(match[1]),
+            sum1: parseInt(match[2]),
+            sum2: parseInt(match[3]),
+            sum3: parseInt(match[4]),
+            total: parseInt(match[5]),
+            lunxiang: match[6].trim(),
+            time: '',
+            yanyan: null,
+            beizhu: ''
+          };
+        }
+      } else if (line.startsWith('时间：')) {
+        if (currentRound) {
+          currentRound.time = line.substring(3).trim();
+        }
+      } else if (line.startsWith('应验：')) {
+        if (currentRound) {
+          const yanyanText = line.substring(3).trim();
+          currentRound.yanyan = parseYanyanText(yanyanText);
+        }
+      } else if (line.startsWith('备注：')) {
+        if (currentRound) {
+          currentRound.beizhu = line.substring(3).trim();
+        }
+      }
+    });
+    
+    if (currentRound) {
+      record.rounds.push(currentRound);
+    }
+    
+    if (record.question) {
+      record.id = generateId(record.question, record.type);
+      records.push(record);
+    }
+  });
+  
+  return records;
+}
+
+// 解析CSV格式文件
+function parseCsvFile(content) {
+  const records = [];
+  const lines = content.split('\n');
+  
+  // 跳过表头
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    // 解析CSV行（简单处理引号内逗号）
+    const values = parseCsvLine(line);
+    if (values.length < 8) continue;
+    
+    const question = values[0];
+    const type = values[1];
+    if (!question) continue;
+    
+    // 查找或创建记录
+    let record = records.find(r => r.question === question && r.type === type);
+    if (!record) {
+      record = {
+        id: generateId(question, type),
+        question: question,
+        type: type || '全轨',
+        rounds: []
+      };
+      records.push(record);
+    }
+    
+    // 添加轮次
+    record.rounds.push({
+      roundNumber: parseInt(values[2]) || 1,
+      sum1: parseInt(values[3]) || 0,
+      sum2: parseInt(values[4]) || 0,
+      sum3: parseInt(values[5]) || 0,
+      total: parseInt(values[6]) || 0,
+      lunxiang: values[7] || '',
+      time: values[8] || '',
+      yanyan: parseYanyanText(values[9]),
+      beizhu: values[10] || ''
+    });
+  }
+  
+  return records;
+}
+
+// 解析CSV行
+function parseCsvLine(line) {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      values.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  values.push(current.trim());
+  return values;
+}
+
+// 解析应验状态文本
+function parseYanyanText(text) {
+  if (!text) return null;
+  if (text === '已应验') return true;
+  if (text === '未应验') return false;
+  if (text === '待观察') return 'pending';
+  return null;
+}
+
+// 合并导入的记录
+function mergeImportedRecords(importedRecords) {
+  if (importedRecords.length === 0) {
+    showTip('未找到有效记录');
+    return;
+  }
+  
+  const existingRecords = getRecords();
+  let addedCount = 0;
+  let mergedCount = 0;
+  
+  importedRecords.forEach(imported => {
+    const existingIndex = existingRecords.findIndex(r => r.id === imported.id);
+    
+    if (existingIndex >= 0) {
+      // 合并轮次
+      const existing = existingRecords[existingIndex];
+      imported.rounds.forEach(round => {
+        const existingRound = existing.rounds.find(r => r.roundNumber === round.roundNumber);
+        if (!existingRound) {
+          existing.rounds.push(round);
+          mergedCount++;
+        }
+      });
+    } else {
+      existingRecords.push(imported);
+      addedCount++;
+    }
+  });
+  
+  saveRecords(existingRecords);
+  renderRecords();
+  showTip(`导入成功：新增${addedCount}条，合并${mergedCount}条`);
+}
+
+// 绑定导入导出按钮事件
+document.getElementById('importBtn').addEventListener('click', importRecords);
+document.getElementById('exportBtn').addEventListener('click', showExportModal);
+
+// 点击背景关闭导出弹窗
+document.getElementById('exportModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeExportModal();
+  }
+});
+</script>
+</body>
+</html>
