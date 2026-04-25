@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 
 /// 占察主界面 - 优化版
 /// 分组逻辑：每三个数字为一组（1-3→0, 4-6→1, 7-9→2, 10-12→3, 13-15→4, 16-18→5）
@@ -1746,28 +1744,9 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
       text += '\n';
     }
     
-    // 让用户选择保存路径
-    String? path = await FilePicker.platform.saveFile(
-      dialogTitle: '选择保存位置',
-      fileName: '占察记录_${DateTime.now().toString().substring(0, 10)}.txt',
-      type: FileType.custom,
-      allowedExtensions: ['txt'],
-    );
-    
-    if (path != null) {
-      try {
-        // 确保文件扩展名正确
-        if (!path.endsWith('.txt')) {
-          path = '$path.txt';
-        }
-        final file = File(path);
-        await file.writeAsString(text, encoding: utf8);
-        _showTip('导出成功');
-      } catch (e) {
-        debugPrint('导出失败: $e');
-        _showTip('导出失败');
-      }
-    }
+    // 复制到剪贴板
+    await Clipboard.setData(ClipboardData(text: text));
+    _showTip('已复制TXT内容到剪贴板');
   }
 
   /// 导出为CSV格式
@@ -1799,28 +1778,9 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
       }
     }
     
-    // 让用户选择保存路径
-    String? path = await FilePicker.platform.saveFile(
-      dialogTitle: '选择保存位置',
-      fileName: '占察记录_${DateTime.now().toString().substring(0, 10)}.csv',
-      type: FileType.custom,
-      allowedExtensions: ['csv'],
-    );
-    
-    if (path != null) {
-      try {
-        // 确保文件扩展名正确
-        if (!path.endsWith('.csv')) {
-          path = '$path.csv';
-        }
-        final file = File(path);
-        await file.writeAsString(csv, encoding: utf8);
-        _showTip('导出成功');
-      } catch (e) {
-        debugPrint('导出失败: $e');
-        _showTip('导出失败');
-      }
-    }
+    // 复制到剪贴板
+    await Clipboard.setData(ClipboardData(text: csv));
+    _showTip('已复制CSV内容到剪贴板');
   }
 
   /// CSV字段转义
@@ -1829,30 +1789,54 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     return str.replaceAll('"', '""');
   }
 
-  /// 导入记录
+  /// 导入记录 - 通过粘贴文本
   Future<void> _importRecords() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['txt', 'csv'],
-      );
-      
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        final content = await file.readAsString(encoding: utf8);
-        
+    final controller = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('导入记录'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('请粘贴TXT或CSV格式的记录内容：'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              maxLines: 10,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: '粘贴内容...',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('导入'),
+          ),
+        ],
+      ),
+    );
+    
+    if (result == true && controller.text.isNotEmpty) {
+      try {
         List<QuestionRecord> importedRecords;
-        if (result.files.single.name.endsWith('.csv')) {
-          importedRecords = _parseCsvFile(content);
+        if (controller.text.contains(',')) {
+          importedRecords = _parseCsvFile(controller.text);
         } else {
-          importedRecords = _parseTxtFile(content);
+          importedRecords = _parseTxtFile(controller.text);
         }
-        
         await _mergeImportedRecords(importedRecords);
+      } catch (e) {
+        debugPrint('导入失败: $e');
+        _showTip('导入失败');
       }
-    } catch (e) {
-      debugPrint('导入失败: $e');
-      _showTip('导入失败');
     }
   }
 
