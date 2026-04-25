@@ -5,6 +5,20 @@ import 'screens/home_screen_v2.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // 捕获所有Flutter错误
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('Flutter Error: ${details.exception}');
+    debugPrint('Stack trace: ${details.stack}');
+  };
+  
+  // 捕获Dart异步错误
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Platform Error: $error');
+    debugPrint('Stack trace: $stack');
+    return true;
+  };
+  
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -32,7 +46,24 @@ class ZhanZhanApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const HomeScreenV2(),
+      home: const SafeArea(
+        child: HomeScreenV2(),
+      ),
+      builder: (context, widget) {
+        // 错误边界
+        Widget errorWidget = const Center(
+          child: Text('加载出错，请重启应用'),
+        );
+        if (widget != null) {
+          try {
+            return widget;
+          } catch (e) {
+            debugPrint('Widget build error: $e');
+            return errorWidget;
+          }
+        }
+        return errorWidget;
+      },
     );
   }
 }
